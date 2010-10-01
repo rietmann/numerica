@@ -17,16 +17,16 @@ Value* NInteger::Codegen(CodeGenContext *context) {
 
 Value* NBinaryOp::comparitive(CodeGenContext* context,char cmp) {
   CmpInst::Predicate cmpinst;
-  if(LHS->getNodeType() == "int" && RHS->getNodeType() == "int") {
+  if(LHS->getNodeType(context) == "int" && RHS->getNodeType(context) == "int") {
     switch(cmp) {
     case '<': cmpinst = ICmpInst::ICMP_SLT; break;
     case '>': cmpinst = ICmpInst::ICMP_SGT; break;
     }
     return new ICmpInst(*(context->currentBlock()), cmpinst,LHS->Codegen(context) , RHS->Codegen(context), "");
   }
-  else if((LHS->getNodeType() == "float" && RHS->getNodeType() == "int") ||
-    (LHS->getNodeType() == "int" && RHS->getNodeType() == "float")
-      || (LHS->getNodeType() == "float" && RHS->getNodeType() == "float")) {
+  else if((LHS->getNodeType(context) == "float" && RHS->getNodeType(context) == "int") ||
+    (LHS->getNodeType(context) == "int" && RHS->getNodeType(context) == "float")
+      || (LHS->getNodeType(context) == "float" && RHS->getNodeType(context) == "float")) {
     switch(cmp) {
     case '<' : cmpinst = FCmpInst::FCMP_OLT; break;
     case '>' : cmpinst = FCmpInst::FCMP_OGT; break;
@@ -39,6 +39,12 @@ Value* NBinaryOp::comparitive(CodeGenContext* context,char cmp) {
 }
 
 Value* NBinaryOp::Codegen(CodeGenContext *context) {
+  string rhs_type = RHS->getNodeType(context);
+  string lhs_type = LHS->getNodeType(context);
+  if( rhs_type.substr(rhs_type.length()-2,rhs_type.length()) == "[]" ||
+	  lhs_type.substr(rhs_type.length()-1,lhs_type.length()) == "[]") {
+	printf("vector types\n"); return vector_arithmetic(context);
+  }
   switch(Op) {
   case '+': return this->arithmetic(context,Instruction::Add); break;
   case '-': return this->arithmetic(context,Instruction::Sub); break;
@@ -50,22 +56,38 @@ Value* NBinaryOp::Codegen(CodeGenContext *context) {
   return 0; 
 }
 
-string NBinaryOp::getNodeType() {
+Value* NBinaryOp::vector_arithmetic(CodeGenContext* context) {
+  if(Op == '+') {
+
+  }
+  if(Op == '-') {
+	
+  }
+  if(Op == '*') {
+
+  }
+  if(Op == '/') {
+
+  }
+  
+}
+
+string NBinaryOp::getNodeType(CodeGenContext* context) {
   switch(Op) {
   case '/': return "float";
   case '^': return "float";
   }
-  if(LHS->getNodeType() == "int[]" && RHS->getNodeType() == "float")
+  if(LHS->getNodeType(context) == "int[]" && RHS->getNodeType(context) == "float")
     return "float[]";
-  else if(LHS->getNodeType() == "float" && RHS->getNodeType() == "int[]")
+  else if(LHS->getNodeType(context) == "float" && RHS->getNodeType(context) == "int[]")
     return "float[]";
-  else if(LHS->getNodeType() == "float[]" || RHS->getNodeType() == "float[]")
+  else if(LHS->getNodeType(context) == "float[]" || RHS->getNodeType(context) == "float[]")
     return "float[]";
-  else if(LHS->getNodeType() == "float" || RHS->getNodeType() == "float")
+  else if(LHS->getNodeType(context) == "float" || RHS->getNodeType(context) == "float")
     return "float";
-  else if(LHS->getNodeType() == "int[]" || RHS->getNodeType() == "int[]")
+  else if(LHS->getNodeType(context) == "int[]" || RHS->getNodeType(context) == "int[]")
     return "int[]";
-  else if(LHS->getNodeType() == "int" && RHS->getNodeType() == "int")
+  else if(LHS->getNodeType(context) == "int" && RHS->getNodeType(context) == "int")
     return "int";
   else
     printf("Should not be here!\n");
@@ -101,7 +123,6 @@ Value* FunctionContainer::Codegen(CodeGenContext* context) {
     Value* store_instr = new StoreInst(argi, alloc, false, context->currentBlock());
     locals[(*it)->name] = alloc;
     localTypes[(*it)->name] = (*it)->type;
-    printf("done building vars %s\n",(*it)->name.c_str());
   }
   
   currentBlock->Codegen(context);
@@ -162,7 +183,7 @@ static const Type *typeOf(const char type)
 }
 
 Value* NVariableDeclaration::Codegen(CodeGenContext *context) {
-  type = rhs->getNodeType();
+  type = rhs->getNodeType(context);
   if(!context->locals()[name] || context->localTypes()[name] != type) {
     AllocaInst *alloc = new AllocaInst(getTypeFromToken(&type), name.c_str(), context->currentBlock());
     context->locals()[name] = alloc;
@@ -178,7 +199,7 @@ Value* NVariableDeclaration::Codegen(CodeGenContext *context) {
 
 Value* NIndexedVectorVariableDeclaration::Codegen(CodeGenContext *context) {
   //TODO: Error Checking
-  type = rhs->getNodeType();
+  type = rhs->getNodeType(context);
   if (context->locals().find(name) == context->locals().end()) {
     std::cerr << "undeclared variable " << name << endl;
     exit(1);
@@ -198,7 +219,7 @@ NIndexedVectorVariableReference::NIndexedVectorVariableReference(string* Name, N
 
 Value* NIndexedVectorVariableReference::Codegen(CodeGenContext *context) {
   
-  if(index->getNodeType() == "int") {
+  if(index->getNodeType(context) == "int") {
 
   } // TODO: Add ability to index vector "int[]"
   else { printf("Variable Index must be an integer\n"); exit(1);}
@@ -241,12 +262,11 @@ Value* NVariableReference::Codegen(CodeGenContext* context) {
     std::cerr << "undeclared variable " << name << endl;
     return NULL;
   }
-  printf("loading %s\n",name.c_str());
   Value* load_ref = new LoadInst(context->locals()[name], "", false, context->currentBlock());
   return load_ref;
 }
 
-string NVariableReference::getNodeType() {
+string NVariableReference::getNodeType(CodeGenContext* context) {
   if (function->localTypes.find(name) == function->localTypes.end()) {
     std::cerr << "undeclared variable in reference: " << name << endl;
     exit(1);
@@ -256,9 +276,12 @@ string NVariableReference::getNodeType() {
 
 NConsecutiveVector::NConsecutiveVector(NExpression* Start, NExpression* Step, NExpression* End) {
   start=Start; step=Step; end=End;
-  string start_type = start->getNodeType();
-  string step_type = step->getNodeType();
-  string end_type = end->getNodeType();
+
+  //TODO move all getNodeType references to Codegen()
+  CodeGenContext* context;
+  string start_type = start->getNodeType(context);
+  string step_type = step->getNodeType(context);
+  string end_type = end->getNodeType(context);
   
   if(start_type == "int" && step_type == "int" && end_type == "int") {
     type = "int[]";
@@ -499,7 +522,7 @@ Value* NReturnStatement::Codegen(CodeGenContext* context) {
     ReturnInst::Create(getGlobalContext(),expr, context->currentBlock());
   }
   context->currentFunction->hasReturn = 1;
-  printf("finished generating return inst\n");
+
 }
 
 Value* NExternalFunctionDeclaration::Codegen(CodeGenContext* context) {
@@ -539,18 +562,19 @@ void CodeGenContext::generateCode(std::vector<FunctionContainer *> &FunctionBloc
 	  FunctionContainer *current = *it;
 	  
 	  vector<const Type*> argTypes;
-	  TypeList types;
+	  TypeList argTypes_string;
 	  VariableList::const_iterator it2;
 	  if(current->arguments.size() > 0) {
 	    for (it2 = current->arguments.begin(); it2 != current->arguments.end(); it2++) {
 	      argTypes.push_back(getTypeFromToken(&((*it2)->type)));
-		  printf("argtype: %s\n",(*it2)->type.c_str());
-	      types.push_back(&((*it)->type));
+	      argTypes_string.push_back(&((*it2)->type));
 	    }
 	  }
-	  this->functions[current->name] = new NFunction(types,&(current->type), &(current->name));
+	  
+	  this->functions[current->name] = new NFunction(argTypes_string,&(current->type), &(current->name));
 	  
 	  if(current->type.length() > 0) {
+		printf("%s has return type: %s\n",current->name.c_str(), current->type.c_str());
 	    current->ftype = FunctionType::get(getTypeFromToken(&(current->type)), argTypes, false);
 	  }
 	  else {
@@ -563,6 +587,7 @@ void CodeGenContext::generateCode(std::vector<FunctionContainer *> &FunctionBloc
 	  Function* func = Function::Create(current->ftype,
 				      GlobalValue::InternalLinkage,
 				      current->name.c_str(), this->module);
+	  printf("generated!\n");
 	  current->function = func;
 	  if(current->name=="main") this->mainFunction = current->function;
 	  
@@ -619,14 +644,12 @@ Value* NMethodCall::Codegen(CodeGenContext* context)
   for (method_call_argument_iterator = arguments.begin(); method_call_argument_iterator != arguments.end(); method_call_argument_iterator++) {
 
     Value* arg_val;
-	printf("types: call:%s,def:%s\n",(**method_call_argument_iterator).getNodeType().c_str(),(**method_def_argument_it).c_str());
-	if( (**method_call_argument_iterator).getNodeType() != (**method_def_argument_it) ) {
+	if( (**method_call_argument_iterator).getNodeType(context) != (**method_def_argument_it) ) {
 
-      if((**method_call_argument_iterator).getNodeType() == "int" && (**method_def_argument_it) == "float") {
-		printf("converting the shit!\n");
+      if((**method_call_argument_iterator).getNodeType(context) == "int" && (**method_def_argument_it) == "float") {
 		arg_val = convertToDoubleIfNeeded((**method_call_argument_iterator).Codegen(context),context);
       }
-      else if((**method_call_argument_iterator).getNodeType() == "float" && (**method_def_argument_it) == "int"){
+      else if((**method_call_argument_iterator).getNodeType(context) == "float" && (**method_def_argument_it) == "int"){
 	printf("Error: Float not converted to integer\n"); exit(1);}
       else {
 	printf("Error: Type conversion to %s not performed\n",(**method_def_argument_it).c_str()); exit(1);
@@ -636,9 +659,8 @@ Value* NMethodCall::Codegen(CodeGenContext* context)
     args.push_back(arg_val);
 	method_def_argument_it++;
   }
-  printf("making callINST\n");
+
   CallInst *call = CallInst::Create(function, args.begin(), args.end(), "", context->currentBlock());
-  printf("and done\n");
   return call;
 }
 
@@ -688,7 +710,8 @@ Value* NIfStatement::Codegen(CodeGenContext* context) {
 NForLoop::NForLoop(string iter_var, NConsecutiveVector* Range,
 		   NBlock*  Block,FunctionContainer* Function)
 {range=Range; i = iter_var; body_block=Block;
-  range_type = range->getNodeType(); function=Function;}
+  CodeGenContext* context;
+  range_type = range->getNodeType(context); function=Function;}
 
 Value* NForLoop::Codegen(CodeGenContext* context) {
 
@@ -717,7 +740,7 @@ Value* NForLoop::Codegen(CodeGenContext* context) {
   string iter_type = range_type.substr(0,range_type.length()-2);
   NVariableDeclaration* iter = new NVariableDeclaration(iter_type, &i,range->start, function);
   Value* i_val = iter->Codegen(context);
-  // printf("i_type=%s\n",iter_type.c_str());
+
   // prepare the two blocks of the loop("bfor_check", "bfor_body") and
   // the block to follow (follow_block="bb.fcn.#")
   std::stringstream ss;

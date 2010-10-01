@@ -40,6 +40,7 @@
 #include <llvm/Support/IRBuilder.h>
 #include <llvm/ExecutionEngine/GenericValue.h> 
 
+#include "helper_library.h"
 
 using namespace llvm;
 using namespace std;
@@ -77,7 +78,7 @@ class NExpression : public Node{
   //   virtual ~NExpression() {}
   //   virtual Value *Codegen(CodeGenContext *context) = 0;
   public:
-  virtual string getNodeType() = 0;
+  virtual string getNodeType(CodeGenContext* context) = 0;
 };
 
 class NStatement : public Node{
@@ -106,7 +107,7 @@ public:
   StatementList statements;
   NBlock() { block=0;function=0;}
   virtual Value* Codegen(CodeGenContext* context);
-  virtual string getNodeType() { return "block";}
+  virtual string getNodeType(CodeGenContext* context) { return "block";}
   BasicBlock* block;
   Function* function;
   string block_name;
@@ -166,7 +167,7 @@ class NInteger : public NNumber{
   int value;
   NInteger(int val) {value = val; type='i'; numType="int";}
   virtual Value *Codegen(CodeGenContext *context);
-  virtual string getNodeType() { return numType; }
+  virtual string getNodeType(CodeGenContext* context) { return numType; }
 };
 
 class NFloat : public NNumber{
@@ -174,18 +175,22 @@ class NFloat : public NNumber{
   double value;
   NFloat(double val) {value = val; type='f'; numType="float";}
   virtual Value *Codegen(CodeGenContext *context);
-  virtual string getNodeType() { return numType; }
+  virtual string getNodeType(CodeGenContext* context) { return numType; }
 };
 
 class NBinaryOp : public NExpression {
-  char Op;
-  NExpression *LHS, *RHS;
 public:
+  char Op;
+  int elementwise_vector_op;
+  NExpression *LHS, *RHS;
   NBinaryOp(char op, NExpression *lhs, NExpression *rhs) 
-    : Op(op), LHS(lhs), RHS(rhs) {}
+    : Op(op), LHS(lhs), RHS(rhs) {elementwise_vector_op=0;}
+ NBinaryOp(char op, int elementwise, NExpression *lhs, NExpression *rhs) 
+   : Op(op), elementwise_vector_op(elementwise), LHS(lhs), RHS(rhs) {}
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType();
+  virtual string getNodeType(CodeGenContext* context);
   Value* arithmetic(CodeGenContext *context, Instruction::BinaryOps instr);
+  Value* vector_arithmetic(CodeGenContext *context);
   Value* comparitive(CodeGenContext *context, char cmd);
   Value* power();
 };
@@ -232,7 +237,7 @@ public:
   NIndexedVectorVariableDeclaration(string* NAME,NExpression* Index, NExpression* RHS, FunctionContainer* Function) 
   { name = *NAME; rhs = RHS; index=Index;function=Function; }
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType() { return type; }
+  virtual string getNodeType(CodeGenContext* context) { return type; }
 };
 
 class NIndexedVectorVariableReference : public NExpression {
@@ -243,7 +248,7 @@ public:
   FunctionContainer* function;
   NIndexedVectorVariableReference(string* Name, NExpression* Index,FunctionContainer* Function);
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType()
+  virtual string getNodeType(CodeGenContext* context)
   {
     if(function->localTypes[name] == "int[]") return "int";
     if(function->localTypes[name] == "float[]") return "float";
@@ -269,7 +274,7 @@ public:
   string type;
   NConsecutiveVector(NExpression* Start, NExpression* Step, NExpression* End);
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType() {return type;}
+  virtual string getNodeType(CodeGenContext* context) {return type;}
 };
 
 class NConsecutiveVectorFloat : public NExpression {
@@ -277,7 +282,7 @@ public:
   double start, step, end;
   NConsecutiveVectorFloat(double Start, double Step, double End) : start(Start), step(Step), end(End) { }
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType() { return "float[]"; }
+  virtual string getNodeType(CodeGenContext* context) { return "float[]"; }
 };
 
 class NConsecutiveVectorInt : public NExpression {
@@ -285,7 +290,7 @@ public:
   int start, step, end;
   NConsecutiveVectorInt(int Start, int Step, int End) : start(Start), step(Step), end(End) { }
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType() { return "int[]"; }
+  virtual string getNodeType(CodeGenContext* context) { return "int[]"; }
 };
   
 class NVariableReference : public NExpression {
@@ -294,7 +299,7 @@ public:
   FunctionContainer* function;
   NVariableReference(string* NAME,FunctionContainer* Function) {name = *NAME; function = Function;}
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType();
+  virtual string getNodeType(CodeGenContext* context);
 };
 
 class NVectorVariableReference : public NExpression {
@@ -303,7 +308,7 @@ public:
   int index;
   NVectorVariableReference(string* Name, int Index) {name=*Name; index=Index;}
   virtual Value* Codegen(CodeGenContext *context);
-  virtual string getNodeType() {return "int[]";}
+  virtual string getNodeType(CodeGenContext* context) {return "int[]";}
 };
 
 class NMethodCall : public NExpression {
@@ -314,7 +319,8 @@ public:
     id(id), arguments(arguments) { }
   NMethodCall(const string& id) : id(id) { }
   virtual llvm::Value* Codegen(CodeGenContext* context);
-  virtual string getNodeType() { return "int"; }
+  //TODO fix method return type!!!
+  virtual string getNodeType(CodeGenContext* context) { return context->functions[id]->return_type; }
 };
 
 

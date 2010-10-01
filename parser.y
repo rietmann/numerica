@@ -133,13 +133,16 @@ exp: VARIABLE { $$ = new NVariableReference($1, current_function); }
 | exp '+' exp        { $$ = new NBinaryOp('+',$1, $3); }
 | exp '-' exp        { $$ = new NBinaryOp('-',$1, $3); }
 | exp '*' exp        { $$ = new NBinaryOp('*',$1, $3); }
+| exp '*' '.' exp        { $$ = new NBinaryOp('*',1,$1, $4); }
 | exp '/' exp        { $$ = new NBinaryOp('/',$1, $3); }
+| exp '/' '.' exp        { $$ = new NBinaryOp('/',1,$1, $4); }
 | exp '<' exp        { $$ = new NBinaryOp('<',$1, $3); }
 | exp '>' exp        { $$ = new NBinaryOp('>',$1, $3); }
 | exp GEQ exp        { $$ = new NBinaryOp('g',$1, $3); }
 | exp LEQ exp        { $$ = new NBinaryOp('l',$1, $3); }
 | '-' exp  %prec NEG { $$ = new NBinaryOp('-',new NInteger(0),$2) }
 | exp '^' exp        { $$ = new NBinaryOp('^',$1, $3); }
+| exp '^' '.' exp        { $$ = new NBinaryOp('^',1,$1, $4); }
 | '(' exp ')'        { $$ = $2;         }
 | VARIABLE '(' call_args ')' { $$ = new NMethodCall(*$1, *$3); delete $3; }
 ;

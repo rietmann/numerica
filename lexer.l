@@ -46,6 +46,7 @@ words {chars}+
 ">=" {yylval.langReserve = new string(yytext); return GEQ;}
 "<=" {yylval.langReserve = new string(yytext); return LEQ;}
 
+
 [-()<>=*+/:;,\[\]{}\^.]           { return *yytext; }
 
 [_a-zA-Z][_a-zA-Z0-9]*  {
