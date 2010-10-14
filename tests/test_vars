@@ -1,0 +1,7 @@
+steve=3.3+1.0;
+doug = 1.1+steve;
+steve=10;
+load void print(float);
+load void printi(int);
+print(doug);
+printi(steve);

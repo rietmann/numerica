@@ -1,0 +1,6 @@
+load void print(float);
+load void printi(int);
+for i=[1.1:10.1] { 
+print(i);
+}
+steve = 3;

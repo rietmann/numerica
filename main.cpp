@@ -161,6 +161,132 @@ void addLibraryFunctions(CodeGenContext* context) {
   
   context->addLibFunction(printfunc);
   context->addLibFunction(printifunc);
+
+  TypeList vecIntTypeList;
+  vecIntTypeList.push_back(new string("int[]"));
+  TypeList vecDoubleTypeList;
+  vecIntTypeList.push_back(new string("float[]"));
+  NExternalFunctionDeclaration* lengthi_func =
+    new NExternalFunctionDeclaration(new string("lengthi"), new string("int"),
+				     vecIntTypeList, *programBlock);
+  NExternalFunctionDeclaration* lengthf_func =
+    new NExternalFunctionDeclaration(new string("lengthf"), new string("int"),
+				     vecDoubleTypeList, *programBlock);
+  
+  
+  TypeList* doubleDoubleTypes = new TypeList();
+  doubleDoubleTypes->push_back(new string("float*[]"));
+  doubleDoubleTypes->push_back(new string("float[]"));
+  doubleDoubleTypes->push_back(new string("float[]"));
+  TypeList* intDoubleTypes = new TypeList();
+  intDoubleTypes->push_back(new string("float*[]"));
+  intDoubleTypes->push_back(new string("int[]"));
+  intDoubleTypes->push_back(new string("float[]"));
+  TypeList* doubleIntTypes = new TypeList();
+  doubleIntTypes->push_back(new string("float*[]"));
+  doubleIntTypes->push_back(new string("float[]"));
+  doubleIntTypes->push_back(new string("int[]"));
+  TypeList* intIntTypes = new TypeList();
+  intIntTypes->push_back(new string("int*[]"));
+  intIntTypes->push_back(new string("int[]"));
+  intIntTypes->push_back(new string("int[]"));
+
+  TypeList* justIntType = new TypeList();
+  justIntType->push_back(new string("int*[]"));
+  NExternalFunctionDeclaration* makeEmptyVector_func =
+    new NExternalFunctionDeclaration(new string("makeEmptyVector"),
+						     new string("void"),
+						     *justIntType,
+						     *programBlock);
+  
+  NExternalFunctionDeclaration* addDoubleDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("addDoubleDoubleVectors"),
+				     new string("void"), *doubleDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* addIntDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("addIntDoubleVectors"),
+				     new string("void"), *intDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* addDoubleIntVectors_func =
+    new NExternalFunctionDeclaration(new string("addDoubleIntVectors"),
+				     new string("void"), *doubleIntTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* addIntIntVectors_func =
+    new NExternalFunctionDeclaration(new string("addIntIntVectors"),
+				     new string("void"), *intIntTypes,
+				     *programBlock);
+  context->addLibFunction(makeEmptyVector_func);
+  context->addLibFunction(addDoubleDoubleVectors_func);
+  context->addLibFunction(addIntDoubleVectors_func);
+  context->addLibFunction(addDoubleIntVectors_func);
+  context->addLibFunction(addIntIntVectors_func);
+
+  NExternalFunctionDeclaration* aMinusBDoubleDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("aMinusBDoubleDoubleVectors"),
+				     new string("void"), *doubleDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* aMinusBIntDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("aMinusBIntDoubleVectors"),
+				     new string("void"), *intDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* aMinusBDoubleIntVectors_func =
+    new NExternalFunctionDeclaration(new string("aMinusBDoubleIntVectors"),
+				     new string("void"), *doubleIntTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* aMinusBIntIntVectors_func =
+    new NExternalFunctionDeclaration(new string("aMinusBIntIntVectors"),
+				     new string("void"), *intIntTypes,
+				     *programBlock);
+  context->addLibFunction(aMinusBDoubleDoubleVectors_func);
+  context->addLibFunction(aMinusBIntDoubleVectors_func);
+  context->addLibFunction(aMinusBDoubleIntVectors_func);
+  context->addLibFunction(aMinusBIntIntVectors_func);
+  
+  NExternalFunctionDeclaration* mulDoubleDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("mulDoubleDoubleVectors"),
+				     new string("void"), *doubleDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* mulIntDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("mulIntDoubleVectors"),
+				     new string("void"), *intDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* mulDoubleIntVectors_func =
+    new NExternalFunctionDeclaration(new string("mulDoubleIntVectors"),
+				     new string("void"), *doubleIntTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* mulIntIntVectors_func =
+    new NExternalFunctionDeclaration(new string("mulIntIntVectors"),
+				     new string("void"), *intIntTypes,
+				     *programBlock);
+  context->addLibFunction(mulDoubleDoubleVectors_func);
+  context->addLibFunction(mulIntDoubleVectors_func);
+  context->addLibFunction(mulDoubleIntVectors_func);
+  context->addLibFunction(mulIntIntVectors_func);
+
+  NExternalFunctionDeclaration* aDivBDoubleDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("aDivBDoubleDoubleVectors"),
+				     new string("void"), *doubleDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* aDivBIntDoubleVectors_func =
+    new NExternalFunctionDeclaration(new string("aDivBIntDoubleVectors"),
+				     new string("void"), *intDoubleTypes,
+				     *programBlock);
+  NExternalFunctionDeclaration* aDivBDoubleIntVectors_func =
+    new NExternalFunctionDeclaration(new string("aDivBDoubleIntVectors"),
+				     new string("void"), *doubleIntTypes,
+				     *programBlock);
+  TypeList* returnFloat_intIntTypes = new TypeList();
+  intIntTypes->push_back(new string("float*[]"));
+  intIntTypes->push_back(new string("int[]"));
+  intIntTypes->push_back(new string("int[]"));
+  NExternalFunctionDeclaration* aDivBIntIntVectors_func =
+    new NExternalFunctionDeclaration(new string("aDivBIntIntVectors"),
+				     new string("void"), *returnFloat_intIntTypes,
+				     *programBlock);
+  context->addLibFunction(aDivBDoubleDoubleVectors_func);
+  context->addLibFunction(aDivBIntDoubleVectors_func);
+  context->addLibFunction(aDivBDoubleIntVectors_func);
+  context->addLibFunction(aDivBIntIntVectors_func);
 }
 
 

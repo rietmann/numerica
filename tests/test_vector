@@ -1,0 +1,6 @@
+joe = [1.1:10.2];
+jerry = [1:10];
+dude = joe+jerry;
+for i=1:10 {
+print(dude[i]);
+}

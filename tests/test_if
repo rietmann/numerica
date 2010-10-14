@@ -1,0 +1,6 @@
+steve = 2;
+doug = 4.0;
+if(steve < 3.4){
+print(doug);
+}
+george = 5;

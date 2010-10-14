@@ -1,0 +1,8 @@
+1+2;
+float steven=2.1;
+steve();
+void steve() {
+float dude = 4.3;
+load void print(float);
+print(dude);
+}

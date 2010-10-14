@@ -1,0 +1,54 @@
+#include <llvm/LLVMContext.h>
+#include <llvm/Module.h>
+#include <llvm/Constants.h>
+#include <llvm/DerivedTypes.h>
+#include <llvm/Instructions.h>
+#include <llvm/ModuleProvider.h>
+#include <llvm/ExecutionEngine/JIT.h>
+#include <llvm/ExecutionEngine/Interpreter.h>
+#include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/Target/TargetSelect.h>
+#include <llvm/Support/ManagedStatic.h>
+#include <llvm/Support/raw_ostream.h>
+#include <stdio.h>
+
+#include "types.h"
+
+
+int main() {
+  
+  InitializeNativeTarget();
+  
+//   LLVMContext Context; //private context, use a global context instead..
+  LLVMContext &Context = getGlobalContext();
+  CodeGenContext *MyContext = new CodeGenContext();
+  // Create some module to put our function into it.
+//   Module *M = new Module("test", Context);
+  Module *M = MyContext->module;
+  
+  NInteger *steve2 = new NInteger(3);
+  NInteger *steve3 = new NInteger(4);
+  NBinaryOp *oper2 = new NBinaryOp('+', steve2, steve3);
+  NBinaryOp *oper = new NBinaryOp('+', steve2, oper2);
+  
+//   Value* plus_feed1 = oper2->Codegen(
+  Value* plus_output = oper->Codegen(MyContext);
+  
+  // Now we create the JIT.
+  ExecutionEngine* EE = EngineBuilder(M).create();
+
+  outs() << "We just constructed this LLVM module:\n\n" << *M;
+  outs() << "\n\nRunning main: ";
+  outs().flush();
+
+  // Call the `foo' function with no arguments:
+  std::vector<GenericValue> noargs;
+  GenericValue gv = EE->runFunction(MyContext->main, noargs);
+
+  // Import result of execution:
+  outs() << "Result: " << gv.IntVal << "\n";
+  EE->freeMachineCodeForFunction(MyContext->main);
+  delete EE;
+  llvm_shutdown();
+  return 0;
+}

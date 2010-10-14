@@ -1,0 +1,7 @@
+extern "C" {
+void print(double Val);
+void printi(int Val);
+double* makeVectorFloat(int length);
+double* makeEnumeratedVectorFloat(double start, double step, double end);
+int* makeEnumeratedVectorInteger(int start, int step, int end);
+}

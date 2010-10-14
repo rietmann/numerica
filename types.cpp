@@ -56,26 +56,130 @@ Value* NBinaryOp::Codegen(CodeGenContext *context) {
   return 0; 
 }
 
+Function* getVecLibFunction(string function_name, CodeGenContext* context) {
+  Function* function = context->module->getFunction(function_name.c_str());
+  if(!function) {
+    NExternalFunctionDeclaration* func = context->functions[function_name]->lib_func;
+    func->Codegen(context);
+    function = context->module->getFunction(function_name.c_str());
+  }
+  if(function)
+  return function;
+  else {printf("no vector function found!?\n"); exit(1);}
+}
+
 Value* NBinaryOp::vector_arithmetic(CodeGenContext* context) {
+  Function* function;
+  std::vector<Value*> args;
+  AllocaInst *alloc;
+  string rhs_type = RHS->getNodeType(context);
+  string lhs_type = LHS->getNodeType(context);
+
+  string float_type = "float[]";
+  string int_type = "int[]";
+  // TODO: try to implement a more elegant way to do this later...
   if(Op == '+') {
-
+    if(rhs_type == "float[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("addDoubleDoubleVectors",context);
+      }
+      else if(lhs_type == "int[]") {
+	function = getVecLibFunction("addIntDoubleVectors",context);
+      }
+      alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+    }
+    else if(rhs_type == "int[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("addDoubleIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+      }
+      else if(lhs_type=="int[]") {
+	function = getVecLibFunction("addIntIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&int_type), "temp", context->currentBlock());
+      }
+    }
   }
-  if(Op == '-') {
-	
+  else if(Op == '-') {
+	if(rhs_type == "float[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("aMinusBDoubleDoubleVectors",context);
+      }
+      else if(lhs_type == "int[]") {
+	function = getVecLibFunction("aMinusBIntDoubleVectors",context);
+      }
+      alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+    }
+    else if(rhs_type == "int[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("aMinusBDoubleIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+      }
+      else if(lhs_type=="int[]") {
+	function = getVecLibFunction("aMinusBIntIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&int_type), "temp", context->currentBlock());
+      }
+    }
   }
-  if(Op == '*') {
-
+  else if(Op == '*') {
+    if(rhs_type == "float[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("mulDoubleDoubleVectors",context);
+      }
+      else if(lhs_type == "int[]") {
+	function = getVecLibFunction("mulIntDoubleVectors",context);
+      }
+      alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+    }
+    else if(rhs_type == "int[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("mulDoubleIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+      }
+      else if(lhs_type=="int[]") {
+	function = getVecLibFunction("mulIntIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&int_type), "temp", context->currentBlock());
+      }
+    }
   }
-  if(Op == '/') {
-
+  else if(Op == '/') {
+    if(rhs_type == "float[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("aDivBDoubleDoubleVectors",context);
+      }
+      else if(lhs_type == "int[]") {
+	function = getVecLibFunction("aDivBIntDoubleVectors",context);
+      }
+      alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+    }
+    else if(rhs_type == "int[]") {
+      if(lhs_type == "float[]") {
+	function = getVecLibFunction("aDivBDoubleIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+      }
+      else if(lhs_type=="int[]") {
+	function = getVecLibFunction("aDivBIntVectors",context);
+	alloc = new AllocaInst(getTypeFromToken(&float_type), "temp", context->currentBlock());
+      }
+    }
   }
+  Value* rhs=RHS->Codegen(context);
+  Value* lhs=LHS->Codegen(context);
   
+  args.push_back(alloc);
+  args.push_back(lhs); // a [+-/*]
+  args.push_back(rhs); // b
+  
+  CallInst *call = CallInst::Create(function, args.begin(), args.end(), "", context->currentBlock());
+  printf("hello!\n");
+  return new LoadInst(alloc, "",false, context->currentBlock());
 }
 
 string NBinaryOp::getNodeType(CodeGenContext* context) {
-  switch(Op) {
-  case '/': return "float";
-  case '^': return "float";
+  if(!(LHS->getNodeType(context) == "int[]" || LHS->getNodeType(context) == "float[]")) {
+    switch(Op) {
+    case '/': return "float";
+    case '^': return "float";
+    }
   }
   if(LHS->getNodeType(context) == "int[]" && RHS->getNodeType(context) == "float")
     return "float[]";
@@ -187,12 +291,14 @@ Value* NVariableDeclaration::Codegen(CodeGenContext *context) {
   if(!context->locals()[name] || context->localTypes()[name] != type) {
     AllocaInst *alloc = new AllocaInst(getTypeFromToken(&type), name.c_str(), context->currentBlock());
     context->locals()[name] = alloc;
-
+    
     context->localTypes()[name] = type;
   }
   if (rhs != NULL) {
+    printf("assigning %s as type:%s\n",name.c_str(),type.c_str());
     NAssignment assn(&name, rhs);
     assn.Codegen(context);
+    printf("finished assignment for %s\n",name.c_str());
   }
   // return alloc;
 }
@@ -255,8 +361,6 @@ Value* NVectorVariableReference::Codegen(CodeGenContext* context) {
   }
 }
 
-
-
 Value* NVariableReference::Codegen(CodeGenContext* context) {
   if (context->locals().find(name) == context->locals().end()) {
     std::cerr << "undeclared variable " << name << endl;
@@ -315,7 +419,6 @@ Value* NConsecutiveVector::Codegen(CodeGenContext* context) {
       // FP variables:
       makeVectorFunction = context->module->getFunction("makeEnumeratedVectorFloat");
       if(!makeVectorFunction) {
-	printf("Loading vector_float function for first time\n");
 	vector<const Type*> argTypes;
 	string float_type = "float";
 	argTypes.push_back(getTypeFromToken(&float_type));
@@ -504,6 +607,14 @@ static const Type* getTypeFromToken(string* token) {
   }
   else if (*token == "int[]") {
     return PointerType::get(Type::getInt32Ty(getGlobalContext()), 0);
+  }
+  else if (*token == "float*[]") {
+    return PointerType::get(PointerType::get(Type::getDoubleTy(getGlobalContext()), 0),0);
+  }
+  else if (*token == "int*[]") {
+    PointerType* PointerTy_2 = PointerType::get(IntegerType::get(getGlobalContext(), 32), 0);
+    return PointerType::get(PointerTy_2, 0);
+    // return PointerType::get(PointerType::get(Type::getInt32Ty(getGlobalContext()), 0),0);
   }
   else
 	return Type::getVoidTy(getGlobalContext());

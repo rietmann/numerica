@@ -1,0 +1,81 @@
+#include "types.h"
+
+void test(void) {
+  printf("test()\n");
+}
+
+extern int GetNextChar(char *b, int maxBuffer) {
+
+}
+
+void addLibraryFunctions(CodeGenContext* context) {
+  TypeList* print_arg_types = new TypeList();
+  print_arg_types->push_back(new string("float"));
+  
+  TypeList* printi_arg_types = new TypeList();
+  printi_arg_types->push_back(new string("int"));
+
+  NExternalFunctionDeclaration* printfunc = new NExternalFunctionDeclaration(new string("print"), new string("void"), *print_arg_types, *programBlock);
+
+  NExternalFunctionDeclaration* printifunc = new NExternalFunctionDeclaration(new string("printi"), new string("void"), *printi_arg_types, *programBlock);
+  
+  context->functions["printi"] = new NFunction(*printi_arg_types,&(printifunc->type),&(printifunc->name));
+  context->functions["printi"]->lib_func = printifunc;
+
+  context->functions["print"] = new NFunction(*print_arg_types,&(printfunc->type),&(printfunc->name));
+  context->functions["print"]->lib_func = printfunc;
+ 
+}
+
+
+int
+main (int argc, char* argv[])
+{
+  int i;
+  char *infile=NULL;
+  
+  test();
+  current_function = new FunctionContainer();
+
+  for (i=1; i<argc; i++) {
+    if (  strcmp(argv[i], "-debug") == 0  ) {
+      printf("debugging activated (not implemented)\n");
+    }
+    else
+      infile = argv[i];
+  }
+
+  printf("reading file '%s'\n", infile);
+  file = fopen(infile, "r");
+  if (  file == NULL  ) {
+    printf("cannot open input\n");
+    return 12;
+    }
+
+  /*================================================================*/
+  /*----------------------------------------------------------------*/
+  buffer = (char*)malloc(lMaxBuffer);
+  if (  buffer == NULL  ) {
+    printf("cannot allocate %d bytes of memory\n", lMaxBuffer);
+    fclose(file);
+    return 12;
+  }
+
+  /*================================================================*/
+  /* parse it ------------------------------------------------------*/
+  DumpRow();
+  if (  getNextLine() == 0  )
+  yyparse();
+
+  /*================================================================*/
+  /* build and run it ------------------------------------------------------*/
+  InitializeNativeTarget();
+  /* test(); */
+  CodeGenContext context;
+  addLibraryFunctions(&context);
+  context.generateCode(FunctionBlocks);
+  context.printLLVMIR();
+  context.runCode();
+  
+  return 0;
+}

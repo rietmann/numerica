@@ -1,0 +1,9 @@
+cal=4;
+cal=steve(10);
+print(cal);
+
+function float steve(float fred) {
+fred = fred+1;
+print(fred);
+return 3;
+}

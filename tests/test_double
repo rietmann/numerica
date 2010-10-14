@@ -1,0 +1,3 @@
+load void print(double);
+steve = 3.3;
+print(steve);
