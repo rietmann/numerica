@@ -165,7 +165,7 @@ Value* NBinaryOp::vector_arithmetic(CodeGenContext* context) {
   Value* rhs=RHS->Codegen(context);
   Value* lhs=LHS->Codegen(context);
   
-  args.push_back(alloc);
+  args.push_back(alloc); // c = 
   args.push_back(lhs); // a [+-/*]
   args.push_back(rhs); // b
   

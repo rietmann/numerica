@@ -2,8 +2,10 @@ import sys, os, subprocess
 
 if os.uname()[0].find('Darwin') >= 0:
 	sys.path.append('/Users/max/Dropbox/bin')
-	libcmd1 = 'g++ -c helper_library.cpp'
-	libcmd2 = 'ar -cvq libnumerica.a helper_library.o'
+	# libcmd1 = 'g++ -c helper_library.cpp'
+	libcmd1 = 'g++ -fPIC -g -c helper_library.cpp'
+	libcmd2 = 'gcc -dynamiclib -Wl,-headerpad_max_install_names,-undefined,dynamic_lookup,-compatibility_version,1.0,-current_version,1.0,-install_name,libnumerica.dylib -o libnumerica.dylib helper_library.o'
+	# libcmd2 = 'ar -cvq libnumerica.a helper_library.o'
 	lncmd1 = 'echo just'
 	lncmd2 = 'echo relax'
 else:
